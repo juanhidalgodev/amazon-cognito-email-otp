@@ -16,9 +16,9 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@aws-amplify/auth": "5.3.3",
-    "@aws-amplify/core": "5.1.12",
-    "aws-amplify": "^5.3.15",
+    "@aws-amplify/auth": "^6.0.16",
+    "@aws-amplify/core": "^6.0.16",
+    "aws-amplify": "^6.0.16",
     "dotenv": "^16.4.2"
   }
 }
