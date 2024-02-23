@@ -12,17 +12,11 @@ async function amplifySignIn(username, password) {
 
   try {
 
-    await signIn({
+    const { isSignedIn, nextStep } = await signIn({
       username,
       password,
-    });
-
-    await signOut();
-
-    const { nextStep } = await signIn({
-      username,
       options: {
-        authFlowType: 'CUSTOM_WITHOUT_SRP',
+        authFlowType: 'CUSTOM_WITH_SRP'
       },
     });
 
