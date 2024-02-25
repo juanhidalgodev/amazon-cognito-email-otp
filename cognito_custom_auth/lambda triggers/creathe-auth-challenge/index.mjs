@@ -11,17 +11,12 @@ const handler = async (event) => {
 
   const sessionLength = event.request.session.length;
   const email = event.request.userAttributes.email;
-  let secretCode;
 
   if (sessionLength > 1 && sessionLength <= 4) {
     console.log("attemp # ", sessionLength-1);
-    secretCode = await sendCode(email, sessionLength-1);
-    event.response.publicChallengeParameters = {
-      username: event.userName
-    };
-    event.response.privateChallengeParameters = {
-      answer: secretCode
-    };
+    const response = await sendCode(email, sessionLength-1);
+    event.response.publicChallengeParameters = { username: event.userName };
+    event.response.privateChallengeParameters = { answer: response.secretCode };
   }
   
   console.log('event: ', JSON.stringify(event));

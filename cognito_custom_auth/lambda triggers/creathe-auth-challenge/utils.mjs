@@ -2,36 +2,38 @@ import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { customAlphabet } from "nanoid";
 
 async function sendCode(addressee, attempt) {
-  
-  let secretCode;
-
-  if (attempt === 1) {
-    secretCode = await generateCode("0123456789", 6);
-  } else if (attempt === 2) {
-    secretCode = await generateCode("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 8);
-  } else {
-    secretCode = await generateCode("0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZ$abcdefghijklmnopqrstuvwxyz!-", 16);
-  }
-
+  const secretCode = await generateCode(getAlphabet(attempt), getCodeLength(attempt));
   const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
 
   if (emailPattern.test(String(addressee).toLowerCase())) {
     console.log("Email OTP");
     try {
-      const response = await sendEmail(secretCode,addressee);
-      return response.secretCode;
+      const response = await sendEmail(secretCode, addressee);
+      return response;
     } catch (error) {
       console.log(error);
     }
   }
-
 }
 
-async function generateCode(alphabet, length){
+function getAlphabet(attempt) {
+  if (attempt === 1) {
+    return "0123456789";
+  } else if (attempt === 2) {
+    return "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  } else {
+    return "0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZ$abcdefghijklmnopqrstuvwxyz!-";
+  }
+}
+
+function getCodeLength(attempt) {
+  return attempt === 1 ? 6 : attempt === 2 ? 8 : 16;
+}
+
+async function generateCode(alphabet, length) {
   const nanoid = customAlphabet(alphabet, length);
   return nanoid();
 }
-
 
 async function sendEmail(code, email) {
   const ses = new SESClient({ region: "us-east-2" });
@@ -44,7 +46,6 @@ async function sendEmail(code, email) {
       Body: {
         Html: { Data: code },
       },
-
       Subject: { Data: "OTP CODE" },
     },
     Source: "EMAIL_ADDRESS",
