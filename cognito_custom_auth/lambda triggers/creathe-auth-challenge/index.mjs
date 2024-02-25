@@ -1,37 +1,27 @@
-import { customAlphabet } from 'nanoid'
-import { sendEmail } from './ses.mjs'
 
-export const handler = async (event, context) => {
+import { sendCode } from './utils.mjs';
 
-    console.log('event: ', JSON.stringify(event));
-    console.log('context: ', context);
+const handler = async (event) => {
+  console.log('event: ', JSON.stringify(event));
+  
+  if (event.request.challengeName !== "CUSTOM_CHALLENGE") {
+    console.log("!CUSTOM_CHALLENGE");
+    return event;
+  }
 
-    try {
+  const sessionLength = event.request.session.length;
+  const email = event.request.userAttributes.email;
 
-        if (!event.request.session || !event.request.session.length) {
-            
-            const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            const nanoid = customAlphabet(alphabet, 6);
-            const otp = nanoid();
-            const email = event.request.userAttributes.email;
-
-            const resultEmail = await sendEmail(otp,email);
-            console.log('resultEmail: ', resultEmail);
-    
-            event.response.publicChallengeParameters = {
-                email: email,
-            };
-    
-            event.response.privateChallengeParameters = { otp };
-            
-            console.log('add publicChallengeParameters-email & privateChallengeParameters');
-            console.log('new event object: ', event);
-        }
-        return event;
-
-    }
-    catch (error) {
-        console.log(error);
-    }
-
+  if (sessionLength > 1 && sessionLength <= 4) {
+    console.log("attemp # ", sessionLength-1);
+    const response = await sendCode(email, sessionLength-1);
+    event.response.publicChallengeParameters = { username: event.userName };
+    event.response.privateChallengeParameters = { answer: response.secretCode };
+  }
+  
+  console.log('event: ', JSON.stringify(event));
+  
+  return event;
 };
+
+export { handler };

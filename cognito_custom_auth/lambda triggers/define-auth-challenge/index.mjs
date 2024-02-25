@@ -1,43 +1,48 @@
-export const handler = async (event, context) => {
-  console.log("event: ", JSON.stringify(event));
-  console.log("context: ", context);
-
-  try {
-    if (
-      event.request.session &&
-      event.request.session.find(
-        (attempt) => attempt.challengeName !== "CUSTOM_CHALLENGE"
-      )
-    ) {
-      // We only accept custom challenges; fail auth
-      event.response.issueTokens = false;
-      event.response.failAuthentication = true;
-    } else if (
-      event.request.session &&
-      event.request.session.length >= 3 &&
-      event.request.session.slice(-1)[0].challengeResult === false
-    ) {
-      // The user provided a wrong answer 3 times; fail auth
-      event.response.issueTokens = false;
-      event.response.failAuthentication = true;
-    } else if (
-      event.request.session &&
-      event.request.session.length &&
-      event.request.session.slice(-1)[0].challengeName === "CUSTOM_CHALLENGE" && // Doubly stitched, holds better
-      event.request.session.slice(-1)[0].challengeResult === true
-    ) {
-      // The user provided the right answer; succeed auth
-      event.response.issueTokens = true;
-      event.response.failAuthentication = false;
-    } else {
-      // The user did not provide a correct answer yet; present challenge
-      event.response.issueTokens = false;
-      event.response.failAuthentication = false;
-      event.response.challengeName = "CUSTOM_CHALLENGE";
-    }
-
-    return event;
-  } catch (error) {
-    console.log(error);
+const handler = async (event) => {
+  
+  console.log('event: ', JSON.stringify(event));
+  
+  if (
+    event.request.session.length == 1 &&
+    event.request.session[0].challengeName == "SRP_A"
+  ) {
+    console.log("SRP_A");
+    event.response.issueTokens = false;
+    event.response.failAuthentication = false;
+    event.response.challengeName = "PASSWORD_VERIFIER";
+  } else if (
+    event.request.session.length == 2 &&
+    event.request.session[1].challengeName == "PASSWORD_VERIFIER" &&
+    event.request.session[1].challengeResult == true
+  ) {
+    console.log("PASSWORD_VERIFIER session length 2");
+    event.response.issueTokens = false;
+    event.response.failAuthentication = false;
+    event.response.challengeName = "CUSTOM_CHALLENGE";
+  } else if (
+    event.request.session.length >= 3 &&
+    event.request.session.slice(-1)[0].challengeName == "CUSTOM_CHALLENGE" &&
+    event.request.session.slice(-1)[0].challengeResult == false
+  ) {
+    console.log("CUSTOM_CHALLENGE session length >= 3 FALSE");
+    event.response.issueTokens = false;
+    event.response.failAuthentication = false;
+    event.response.challengeName = "CUSTOM_CHALLENGE";
+  } else if (
+    event.request.session.length >= 4 &&
+    event.request.session.slice(-1)[0].challengeName == "CUSTOM_CHALLENGE" &&
+    event.request.session.slice(-1)[0].challengeResult == true
+  ) {
+    console.log("CUSTOM_CHALLENGE session length >= 3 TRUE");
+    event.response.issueTokens = true;
+    event.response.failAuthentication = false;
+  } else {
+    console.log("failAuthentication");
+    event.response.issueTokens = false;
+    event.response.failAuthentication = true;
   }
+  
+  return event;
 };
+
+export { handler }
