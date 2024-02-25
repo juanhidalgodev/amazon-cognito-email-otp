@@ -1,50 +1,44 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import { customAlphabet } from 'nanoid';
+import { customAlphabet } from "nanoid";
 
-async function sendCode(addressee,attempt) {
+async function sendCode(addressee, attempt) {
   
-  let alphabet;
-  let nanoid;
   let secretCode;
-  
-  if(attempt === 1){
-    alphabet = '0123456789';
-    nanoid = customAlphabet(alphabet, 6);
-    secretCode = nanoid();
-  }else if(attempt === 2){
-    alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    nanoid = customAlphabet(alphabet, 8);
-    secretCode = nanoid();
-  }else{
-    alphabet = '0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZ$abcdefghijklmnopqrstuvwxyz!-';
-    nanoid = customAlphabet(alphabet, 16);
-    secretCode = nanoid();
+
+  if (attempt === 1) {
+    secretCode = await generateCode("0123456789", 6);
+  } else if (attempt === 2) {
+    secretCode = await generateCode("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 8);
+  } else {
+    secretCode = await generateCode("0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZ$abcdefghijklmnopqrstuvwxyz!-", 16);
   }
-  
+
   const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-  const phonePattern = /^[9][0-9]{8}$/;
-  
+
   if (emailPattern.test(String(addressee).toLowerCase())) {
-    console.log('Email verification code');
-    return secretCode;
+    console.log("Email OTP");
+    try {
+      const response = await sendEmail(secretCode,addressee);
+      return response.secretCode;
+    } catch (error) {
+      console.log(error);
+    }
   }
-  
-  if (phonePattern.test(String(addressee))) {
-    console.log('SMS verification code');
-  }
-  
-  const resultEmail = await sendEmail(secretCode,addressee);
-  console.log('resultEmail: ', resultEmail);
-  
+
 }
 
-async function sendEmail(code, email){
-  
+async function generateCode(alphabet, length){
+  const nanoid = customAlphabet(alphabet, length);
+  return nanoid();
+}
+
+
+async function sendEmail(code, email) {
   const ses = new SESClient({ region: "us-east-2" });
 
   const command = new SendEmailCommand({
     Destination: {
-      ToAddresses: [ email ],
+      ToAddresses: [email],
     },
     Message: {
       Body: {
@@ -55,13 +49,13 @@ async function sendEmail(code, email){
     },
     Source: "EMAIL_ADDRESS",
   });
-  console.log('command  ', command);
+  console.log("command  ", command);
 
   try {
     let response = await ses.send(command);
+    response.secretCode = code;
     return response;
-  }
-  catch (error) {
+  } catch (error) {
     console.log(error);
   }
 }
